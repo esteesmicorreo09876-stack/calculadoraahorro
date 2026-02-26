@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Ahorro e Inversión</title>
+  <meta name="description" content="Calcula cómo crecerá tu inversión hasta los 65 años con interés compuesto. Visualiza la evolución de tu capital de forma clara y sencilla." />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: rgba(255,255,255,0.07);
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --accent3: #ff6b6b;
+      --text: #e8eaf6;
+      --text-muted: #8b90a8;
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 30%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+    }
+
+    /* ── INPUTS ── */
+    .input-group {
+      margin-bottom: 20px;
+    }
+    .input-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .input-group label .icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .input-group label .icon.purple { background: rgba(108,99,255,0.2); }
+    .input-group label .icon.teal   { background: rgba(0,212,170,0.2); }
+    .input-group label .icon.red    { background: rgba(255,107,107,0.2); }
+    .input-group label .icon.gold   { background: rgba(255,193,7,0.2); }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-prefix {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+      user-select: none;
+    }
+    .input-suffix {
+      position: absolute;
+      right: 14px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+      user-select: none;
+    }
+    input[type="number"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px 40px 12px 36px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+      outline: none;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+    }
+    input[type="number"].no-prefix { padding-left: 14px; }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 4px;
+      background: var(--surface2);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(108,99,255,0.5);
+      cursor: pointer;
+    }
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── RIGHT COLUMN ── */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 580px) {
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .summary-card.s1::before { background: linear-gradient(90deg, var(--accent), #a78bfa); }
+    .summary-card.s2::before { background: linear-gradient(90deg, var(--accent2), #34d399); }
+    .summary-card.s3::before { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+    .summary-card:hover { transform: translateY(-2px); }
+    .summary-card .s-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .summary-card .s-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .s1 .s-value { color: #a78bfa; }
+    .s2 .s-value { color: var(--accent2); }
+    .s3 .s-value { color: #fbbf24; }
+    .summary-card .s-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── CHARTS ── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .pie-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .pie-wrap canvas { max-width: 180px; }
+
+    .legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.78rem;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .years-note {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .card, .summary-card { animation: fadeIn 0.5s ease both; }
+    .summary-card:nth-child(2) { animation-delay: 0.05s; }
+    .summary-card:nth-child(3) { animation-delay: 0.1s; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">💰 Planificación Financiera</div>
+  <h1>Calculadora de Ahorro<br>e Inversión</h1>
+  <p>Descubre cómo crecerá tu dinero hasta los 65 años con el poder del interés compuesto.</p>
+</header>
+
+<div class="container">
+  <!-- ── SUMMARIES ── -->
+  <div class="summary-grid" style="margin-bottom:22px;">
+    <div class="summary-card s1">
+      <div class="s-label">💼 Total Invertido</div>
+      <div class="s-value" id="sumInverted">—</div>
+      <div class="s-sub">Capital aportado por ti</div>
+    </div>
+    <div class="summary-card s2">
+      <div class="s-label">📈 Intereses Generados</div>
+      <div class="s-value" id="sumInterest">—</div>
+      <div class="s-sub">Generado por el mercado</div>
+    </div>
+    <div class="summary-card s3">
+      <div class="s-label">🏆 Capital Final</div>
+      <div class="s-value" id="sumTotal">—</div>
+      <div class="s-sub" id="sumYears">A los 65 años</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- ── LEFT: INPUTS ── -->
+    <div class="card">
+      <div class="card-title">⚙️ Parámetros</div>
+
+      <div class="input-group">
+        <label>
+          <span class="icon purple">💰</span>
+          Capital inicial
+        </label>
+        <div class="input-wrapper">
+          <span class="input-prefix">€</span>
+          <input type="number" id="capital" value="10000" min="0" step="500" />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>
+          <span class="icon teal">🎂</span>
+          Edad actual
+        </label>
+        <div class="input-wrapper">
+          <input type="number" id="age" value="30" min="1" max="64" class="no-prefix" style="padding-right:14px;" />
+        </div>
+        <div class="slider-row">
+          <input type="range" id="ageRange" min="18" max="64" value="30" />
+        </div>
+        <div class="range-labels"><span>18</span><span>64</span></div>
+      </div>
+
+      <div class="input-group">
+        <label>
+          <span class="icon red">📊</span>
+          Interés anual esperado
+        </label>
+        <div class="input-wrapper">
+          <input type="number" id="rate" value="7" min="0" max="50" step="0.5" class="no-prefix" style="padding-right:34px;" />
+          <span class="input-suffix">%</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="rateRange" min="0" max="20" step="0.5" value="7" />
+        </div>
+        <div class="range-labels"><span>0%</span><span>20%</span></div>
+      </div>
+
+      <div class="input-group" style="margin-bottom:0;">
+        <label>
+          <span class="icon gold">➕</span>
+          Aportación mensual
+        </label>
+        <div class="input-wrapper">
+          <span class="input-prefix">€</span>
+          <input type="number" id="monthly" value="300" min="0" step="50" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: CHARTS ── -->
+    <div class="right-col">
+      <div class="card">
+        <div class="card-title">📊 Distribución del Capital</div>
+        <div class="charts-grid">
+          <div class="pie-wrap">
+            <canvas id="pieChart"></canvas>
+            <div class="legend" id="pieLegend"></div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="lineChart"></canvas>
+            <p class="years-note">Evolución año a año hasta los 65</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Los cálculos son orientativos y usan interés compuesto anual. No constituyen asesoramiento financiero.
+</footer>
+
+<script>
+  // ── Elements ──
+  const elCapital  = document.getElementById('capital');
+  const elAge      = document.getElementById('age');
+  const elAgeRange = document.getElementById('ageRange');
+  const elRate     = document.getElementById('rate');
+  const elRateRange= document.getElementById('rateRange');
+  const elMonthly  = document.getElementById('monthly');
+
+  const elSumInverted = document.getElementById('sumInverted');
+  const elSumInterest = document.getElementById('sumInterest');
+  const elSumTotal    = document.getElementById('sumTotal');
+  const elSumYears    = document.getElementById('sumYears');
+  const elPieLegend   = document.getElementById('pieLegend');
+
+  // ── Sync sliders ──
+  elAgeRange.addEventListener('input', () => { elAge.value = elAgeRange.value; update(); });
+  elAge.addEventListener('input', () => { elAgeRange.value = elAge.value; update(); });
+  elRateRange.addEventListener('input', () => { elRate.value = elRateRange.value; update(); });
+  elRate.addEventListener('input', () => { elRateRange.value = elRate.value; update(); });
+  elCapital.addEventListener('input', update);
+  elMonthly.addEventListener('input', update);
+
+  // ── Formatters ──
+  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+
+  // ── Calculation ──
+  function calculate() {
+    const capital = Math.max(0, parseFloat(elCapital.value) || 0);
+    const age     = Math.min(64, Math.max(1, parseInt(elAge.value) || 18));
+    const rate    = Math.max(0, parseFloat(elRate.value) || 0) / 100;
+    const monthly = Math.max(0, parseFloat(elMonthly.value) || 0);
+    const years   = Math.max(0, 65 - age);
+
+    const labels = [];
+    const dataCapital = [];
+    const dataContrib = [];
+    const dataInterest= [];
+
+    let currentCapital = capital;
+    let totalContrib   = capital;
+
+    for (let y = 1; y <= years; y++) {
+      // Apply annual compound interest to existing capital
+      currentCapital = currentCapital * (1 + rate);
+      // Add monthly contributions (compounded mid-year approximation: 12 months at monthly rate)
+      const monthlyRate = Math.pow(1 + rate, 1/12) - 1;
+      const contribValue = monthly * ((Math.pow(1 + monthlyRate, 12) - 1) / monthlyRate);
+      currentCapital += contribValue;
+      totalContrib += monthly * 12;
+
+      labels.push(`${age + y}`);
+      dataCapital.push(Math.round(currentCapital));
+      dataContrib.push(Math.round(totalContrib));
+      dataInterest.push(Math.round(currentCapital - totalContrib));
+    }
+
+    const finalCapital  = dataCapital[dataCapital.length - 1] || capital;
+    const finalContrib  = totalContrib;
+    const finalInterest = Math.max(0, finalCapital - finalContrib);
+
+    return { labels, dataCapital, dataContrib, dataInterest, finalCapital, finalContrib, finalInterest, years, age };
+  }
+
+  // ── Chart colors ──
+  const COLORS = {
+    contrib: '#6c63ff',
+    interest: '#00d4aa',
+    line: '#6c63ff',
+    lineFill: 'rgba(108,99,255,0.12)',
+    contrib2: 'rgba(108,99,255,0.15)',
+    interest2: 'rgba(0,212,170,0.15)',
+  };
+
+  // ── Chart.js global defaults ──
+  Chart.defaults.color = '#8b90a8';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  // ── Create Pie Chart ──
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  const pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Capital Aportado', 'Intereses'],
+      datasets: [{
+        data: [1, 1],
+        backgroundColor: [COLORS.contrib, COLORS.interest],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '65%',
+      animation: { duration: 600, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${fmt(ctx.raw)}`
+          },
+          backgroundColor: '#1a1d27',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 10,
+        }
+      }
+    }
+  });
+
+  // ── Create Line Chart ──
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  const lineChart = new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Capital Total',
+          data: [],
+          borderColor: COLORS.line,
+          backgroundColor: COLORS.lineFill,
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          pointBackgroundColor: COLORS.line,
+        },
+        {
+          label: 'Total Aportado',
+          data: [],
+          borderColor: COLORS.interest,
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.4,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointBackgroundColor: COLORS.interest,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600, easing: 'easeInOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          title: { display: true, text: 'Edad', color: '#8b90a8', font: { size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { maxTicksLimit: 10, font: { size: 10 } }
+        },
+        y: {
+          title: { display: true, text: 'Capital (€)', color: '#8b90a8', font: { size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            font: { size: 10 },
+            callback: (v) => {
+              if (v >= 1_000_000) return (v/1_000_000).toFixed(1) + 'M€';
+              if (v >= 1_000) return (v/1_000).toFixed(0) + 'k€';
+              return v + '€';
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 14, font: { size: 11 }, color: '#8b90a8' }
+        },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            title: (items) => `Edad: ${items[0].label}`,
+            label: (ctx) => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}`
+          }
+        }
+      }
+    }
+  });
+
+  // ── Update everything ──
+  function update() {
+    const d = calculate();
+
+    // Summary cards
+    elSumInverted.textContent = fmt(d.finalContrib);
+    elSumInterest.textContent = fmt(d.finalInterest);
+    elSumTotal.textContent    = fmt(d.finalCapital);
+    elSumYears.textContent    = d.years > 0 ? `En ${d.years} año${d.years !== 1 ? 's' : ''} (a los 65)` : 'Ya tienes 65 años o más';
+
+    // Pie chart
+    pieChart.data.datasets[0].data = [Math.max(0, d.finalContrib), Math.max(0, d.finalInterest)];
+    pieChart.update();
+
+    // Custom legend
+    const pct = d.finalCapital > 0
+      ? [(d.finalContrib / d.finalCapital * 100).toFixed(1), (d.finalInterest / d.finalCapital * 100).toFixed(1)]
+      : ['—', '—'];
+    elPieLegend.innerHTML = `
+      <div class="legend-item"><span class="legend-dot" style="background:${COLORS.contrib}"></span><span>Aportado <b style="color:#fff">${pct[0]}%</b></span></div>
+      <div class="legend-item"><span class="legend-dot" style="background:${COLORS.interest}"></span><span>Intereses <b style="color:#fff">${pct[1]}%</b></span></div>
+    `;
+
+    // Line chart
+    lineChart.data.labels = d.labels;
+    lineChart.data.datasets[0].data = d.dataCapital;
+    lineChart.data.datasets[1].data = d.dataContrib;
+    lineChart.update();
+  }
+
+  // ── Init ──
+  update();
+</script>
+</body>
+</html>
